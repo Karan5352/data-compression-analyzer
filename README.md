@@ -1,6 +1,13 @@
 # Data Compression Analyzer
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-blue)](https://isocpp.org/std/the-standard)
+[![CMake](https://img.shields.io/badge/CMake-3.15%2B-blue)](https://cmake.org/)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/data-compression-analyzer/actions)
+
 A modern GUI application for analyzing and comparing compression algorithms, built with Dear ImGui and C++17.
+
+<img src="screenshots/compression_options.png" width="400" alt="Compression Options" /><br><img src="screenshots/results_tab.png" width="400" alt="Results Tab" />
 
 ## Features
 
@@ -13,6 +20,8 @@ A modern GUI application for analyzing and comparing compression algorithms, bui
   - Compression time
   - Decompression time
   - Memory usage
+  - Entropy
+  - Throughput
 - Multi-file selection and processing
 - Export results in CSV or JSON format
 - Cross-platform support (Windows, macOS, Linux)
@@ -21,28 +30,30 @@ A modern GUI application for analyzing and comparing compression algorithms, bui
 
 - C++17 or later
 - CMake 3.15 or later
-- Required libraries:
-  - Dear ImGui
+- Required libraries (auto-fetched or installed via your package manager):
+  - Dear ImGui (auto-fetched)
+  - tinyfiledialogs (auto-fetched)
+  - nlohmann-json (auto-fetched)
   - zlib (for Gzip compression)
   - GLFW3
   - OpenGL
 
-## Building the Project
+### macOS (Homebrew) example:
+```bash
+brew install cmake zlib glfw nlohmann-json
+```
+
+## Building and Running
+
+Clone the repository and then build and run the application:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/data-compression-analyzer.git
+git clone https://github.com/Karan5352/data-compression-analyzer.git
 cd data-compression-analyzer
 
-# Create and enter build directory
-mkdir build && cd build
-
-# Configure and build
-cmake ..
-make
-
-# Run the application
-./DataCompressionAnalyzer
+# Build and run (from the project root)
+rm -rf build && mkdir build && cd build && cmake .. && make && ./DataCompressionAnalyzer
 ```
 
 ## Usage
@@ -58,6 +69,7 @@ make
    - Summary statistics
    - Detailed results table
 7. Export results in CSV or JSON format
+
 
 ## Project Structure
 
@@ -88,24 +100,22 @@ make
 ### Gzip Compression
 - Configurable compression levels (1-9)
 - Individual file compression
-- Detailed performance metrics
+- Detailed performance metrics (ratio, time, entropy, throughput)
 
 ### Archive+Gzip Compression
 - Combines multiple files into a single archive
 - Uses Gzip compression internally
-- Configurable compression levels
 - Preserves file structure and names
+- Configurable compression levels
 
 ### Results Analysis
 - Compression ratio calculation
 - Compression and decompression timing
 - Memory usage tracking
+- Entropy calculation
+- Throughput calculation
 - Export functionality for further analysis
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
