@@ -7,7 +7,7 @@
 
 A modern GUI application for analyzing and comparing compression algorithms, built with Dear ImGui and C++17.
 
-<img src="screenshots/compression_options.png" width="400" alt="Compression Options" /><br><img src="screenshots/results_tab.png" width="400" alt="Results Tab" />
+<img src="screenshots/compression_options.png" width="800" alt="Compression Options" /><br><img src="screenshots/results_tab.png" width="800" alt="Results Tab" />
 
 ## Features
 
