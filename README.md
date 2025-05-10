@@ -5,9 +5,13 @@
 [![CMake](https://img.shields.io/badge/CMake-3.15%2B-blue)](https://cmake.org/)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/data-compression-analyzer/actions)
 
-A modern GUI application for analyzing and comparing compression algorithms, built with Dear ImGui and C++17.
+A GUI application for analyzing and comparing compression algorithms, built with Dear ImGui and C++17.
 
-<img src="screenshots/compression_options.png" width="800" alt="Compression Options" /><br><img src="screenshots/results_tab.png" width="800" alt="Results Tab" />
+<img src="screenshots/compression_options.png" width="800" alt="Compression Options" /><br>
+
+<hr>
+
+<img src="screenshots/results_tab.png" width="800" alt="Results Tab" />
 
 ## Features
 
