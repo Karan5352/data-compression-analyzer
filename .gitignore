@@ -30,3 +30,59 @@
 *.exe
 *.out
 *.app
+
+# Build directories
+build/
+cmake-build-*/
+out/
+bin/
+lib/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.user
+*.suo
+*.sln.docstates
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Project specific
+*.csv
+*.json
+*.gz
+*.lzma
+*.br
+*.zst
+*.tar
+*.zip
+*.rar
+*.7z
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Dependencies
+_deps/
