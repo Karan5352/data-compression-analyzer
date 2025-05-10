@@ -32,7 +32,7 @@ void MainWindow::initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window_ = glfwCreateWindow(1280, 720, "Data Compression Analyzer", nullptr, nullptr);
+    window_ = glfwCreateWindow(1600, 900, "Data Compression Analyzer", nullptr, nullptr);
     if (!window_) {
         glfwTerminate();
         throw std::runtime_error("Failed to create GLFW window");
@@ -168,42 +168,80 @@ void MainWindow::renderResults() {
         // Add summary statistics
         if (ImGui::TreeNode("Summary Statistics")) {
             double avg_ratio = 0.0;
+            double avg_entropy = 0.0;
             double avg_comp_time_ms = 0.0;
             double avg_decomp_time_ms = 0.0;
+            double avg_comp_throughput = 0.0;
+            double avg_decomp_throughput = 0.0;
+            size_t total_original_size = 0;
+            size_t total_compressed_size = 0;
+            
             for (const auto& result : results_) {
                 avg_ratio += result.ratio;
+                avg_entropy += result.entropy;
                 avg_comp_time_ms += result.compression_time_us / 1000.0;
                 avg_decomp_time_ms += result.decompression_time_us / 1000.0;
+                avg_comp_throughput += result.compression_throughput;
+                avg_decomp_throughput += result.decompression_throughput;
+                total_original_size += result.original_size;
+                total_compressed_size += result.compressed_size;
             }
             size_t count = results_.size();
             avg_ratio /= count;
+            avg_entropy /= count;
             avg_comp_time_ms /= count;
             avg_decomp_time_ms /= count;
+            avg_comp_throughput /= count;
+            avg_decomp_throughput /= count;
+            
             ImGui::Text("Average Compression Ratio: %.2f", avg_ratio);
+            ImGui::Text("Average Entropy: %.2f bits/byte", avg_entropy);
             ImGui::Text("Average Compression Time: %.3f ms", avg_comp_time_ms);
             ImGui::Text("Average Decompression Time: %.3f ms", avg_decomp_time_ms);
+            ImGui::Text("Average Compression Speed: %.2f MB/s", avg_comp_throughput);
+            ImGui::Text("Average Decompression Speed: %.2f MB/s", avg_decomp_throughput);
+            ImGui::Text("Total Original Size: %.2f KB", total_original_size / 1024.0);
+            ImGui::Text("Total Compressed Size: %.2f KB", total_compressed_size / 1024.0);
+            ImGui::Text("Total Space Saved: %.2f KB (%.1f%%)", 
+                (total_original_size - total_compressed_size) / 1024.0,
+                (1.0 - static_cast<double>(total_compressed_size) / total_original_size) * 100.0);
             ImGui::TreePop();
         }
         // Detailed results table
-        if (ImGui::BeginTable("ResultsTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY)) {
+        if (ImGui::BeginTable("ResultsTable", 10, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY)) {
             ImGui::TableSetupColumn("File");
+            ImGui::TableSetupColumn("Type");
             ImGui::TableSetupColumn("Algorithm");
             ImGui::TableSetupColumn("Ratio");
-            ImGui::TableSetupColumn("Compression Time (ms)");
-            ImGui::TableSetupColumn("Decompression Time (ms)");
+            ImGui::TableSetupColumn("Entropy");
+            ImGui::TableSetupColumn("Original Size (KB)");
+            ImGui::TableSetupColumn("Compressed Size (KB)");
+            ImGui::TableSetupColumn("Compression Speed (MB/s)");
+            ImGui::TableSetupColumn("Decompression Speed (MB/s)");
+            ImGui::TableSetupColumn("Time (ms)");
             ImGui::TableHeadersRow();
             for (const auto& result : results_) {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 ImGui::Text("%s", result.filename.c_str());
                 ImGui::TableNextColumn();
+                ImGui::Text("%s", result.file_type.c_str());
+                ImGui::TableNextColumn();
                 ImGui::Text("%s", result.algorithm.c_str());
                 ImGui::TableNextColumn();
                 ImGui::Text("%.2f", result.ratio);
                 ImGui::TableNextColumn();
-                ImGui::Text("%.3f", result.compression_time_us / 1000.0);
+                ImGui::Text("%.2f", result.entropy);
                 ImGui::TableNextColumn();
-                ImGui::Text("%.3f", result.decompression_time_us / 1000.0);
+                ImGui::Text("%.2f", result.original_size / 1024.0);
+                ImGui::TableNextColumn();
+                ImGui::Text("%.2f", result.compressed_size / 1024.0);
+                ImGui::TableNextColumn();
+                ImGui::Text("%.2f", result.compression_throughput);
+                ImGui::TableNextColumn();
+                ImGui::Text("%.2f", result.decompression_throughput);
+                ImGui::TableNextColumn();
+                ImGui::Text("%.3f", (result.compression_time_us + result.decompression_time_us) / 1000.0);
             }
             ImGui::EndTable();
         }
@@ -252,8 +290,11 @@ void MainWindow::processFiles(int selected_compressor, int gzip_level, bool arch
     if (archive_mode && selected_compressor == 1) { // Archive mode
         try {
             std::vector<std::pair<std::string, std::vector<uint8_t>>> files;
+            size_t total_original_size = 0;
             for (const auto& file_path : selected_files_) {
-                files.emplace_back(file_path.filename().string(), FileHandler::readFile(file_path));
+                auto file_data = FileHandler::readFile(file_path);
+                total_original_size += file_data.size();
+                files.emplace_back(file_path.filename().string(), std::move(file_data));
             }
             
             auto result = static_cast<ArchiveCompressor*>(compressors_[selected_compressor].get())
@@ -262,9 +303,15 @@ void MainWindow::processFiles(int selected_compressor, int gzip_level, bool arch
             CompressionResult ui_result;
             ui_result.filename = "Archive (" + std::to_string(selected_files_.size()) + " files)";
             ui_result.algorithm = compressors_[selected_compressor]->getName() + " (Level " + std::to_string(gzip_level) + ")";
+            ui_result.file_type = "Archive";
             ui_result.ratio = result.compression_ratio;
+            ui_result.entropy = FileHandler::calculateEntropy(files[0].second); // Calculate entropy of first file
             ui_result.compression_time_us = result.compression_time.count();
             ui_result.decompression_time_us = result.decompression_time.count();
+            ui_result.compression_throughput = FileHandler::calculateThroughput(total_original_size, result.compression_time.count());
+            ui_result.decompression_throughput = FileHandler::calculateThroughput(total_original_size, result.decompression_time.count());
+            ui_result.original_size = total_original_size;
+            ui_result.compressed_size = static_cast<size_t>(total_original_size * result.compression_ratio);
             results_.push_back(ui_result);
         } catch (const std::exception& e) {
             showError("Error processing archive: " + std::string(e.what()));
@@ -278,9 +325,15 @@ void MainWindow::processFiles(int selected_compressor, int gzip_level, bool arch
                 ui_result.filename = file_path.filename().string();
                 ui_result.algorithm = compressors_[selected_compressor]->getName() + 
                                     (selected_compressor == 0 ? " (Level " + std::to_string(gzip_level) + ")" : "");
+                ui_result.file_type = FileHandler::detectFileType(file_data);
                 ui_result.ratio = result.compression_ratio;
+                ui_result.entropy = FileHandler::calculateEntropy(file_data);
                 ui_result.compression_time_us = result.compression_time.count();
                 ui_result.decompression_time_us = result.decompression_time.count();
+                ui_result.compression_throughput = FileHandler::calculateThroughput(file_data.size(), result.compression_time.count());
+                ui_result.decompression_throughput = FileHandler::calculateThroughput(file_data.size(), result.decompression_time.count());
+                ui_result.original_size = file_data.size();
+                ui_result.compressed_size = static_cast<size_t>(file_data.size() * result.compression_ratio);
                 results_.push_back(ui_result);
             } catch (const std::exception& e) {
                 showError("Error processing file " + file_path.string() + ": " + e.what());
@@ -302,18 +355,22 @@ void MainWindow::exportResults(const std::string& default_filename, bool as_json
     if (save_path) {
         try {
             std::vector<std::string> headers = {
-                "File", "Algorithm", "Ratio", "Compression Time (ms)",
-                "Decompression Time (ms)", "Memory Used (KB)"
+                "File", "Type", "Algorithm", "Ratio", "Entropy", "Original Size (KB)", "Compressed Size (KB)",
+                "Compression Speed (MB/s)", "Decompression Speed (MB/s)", "Time (ms)"
             };
             std::vector<std::vector<std::string>> rows;
             for (const auto& result : results_) {
                 rows.push_back({
                     result.filename,
+                    result.file_type,
                     result.algorithm,
                     std::to_string(result.ratio),
-                    std::to_string(result.compression_time_us / 1000.0),
-                    std::to_string(result.decompression_time_us / 1000.0),
-                    std::to_string(result.memory_used / 1024.0)
+                    std::to_string(result.entropy),
+                    std::to_string(result.original_size / 1024.0),
+                    std::to_string(result.compressed_size / 1024.0),
+                    std::to_string(result.compression_throughput),
+                    std::to_string(result.decompression_throughput),
+                    std::to_string((result.compression_time_us + result.decompression_time_us) / 1000.0)
                 });
             }
             if (as_json) {

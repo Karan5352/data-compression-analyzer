@@ -4,6 +4,7 @@
 #include <vector>
 #include <filesystem>
 #include <optional>
+#include <map>
 
 class FileHandler {
 public:
@@ -38,4 +39,9 @@ public:
     static void exportToJSON(const std::filesystem::path& output_path,
                             const std::vector<std::string>& headers,
                             const std::vector<std::vector<std::string>>& rows);
+    
+    // New utility functions
+    static std::string detectFileType(const std::vector<uint8_t>& data);
+    static double calculateEntropy(const std::vector<uint8_t>& data);
+    static double calculateThroughput(size_t bytes, long long microseconds);
 }; 

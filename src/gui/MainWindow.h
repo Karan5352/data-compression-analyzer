@@ -45,10 +45,16 @@ private:
     struct CompressionResult {
         std::string filename;
         std::string algorithm;
+        std::string file_type;
         double ratio;
+        double entropy;
         long long compression_time_us;
         long long decompression_time_us;
+        double compression_throughput;  // MB/s
+        double decompression_throughput;  // MB/s
         size_t memory_used;
+        size_t original_size;    // Size in bytes
+        size_t compressed_size;  // Size in bytes
     };
     std::vector<CompressionResult> results_;
     
